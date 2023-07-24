@@ -1,0 +1,232 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: privatebin
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: privatebin-pvc
+  namespace: privatebin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: privatebin-cfg
+  namespace: privatebin
+data:
+  conf.php: |
+    [main]
+    discussion = true
+    opendiscussion = false
+    password = true
+    fileupload = false
+    burnafterreadingselected = false
+    defaultformatter = "plaintext"
+    sizelimit = 10485760
+    template = "bootstrap-dark"
+    languageselection = false
+    [expire]
+    default = "1week"
+    [expire_options]
+    5min = 300
+    10min = 600
+    1hour = 3600
+    1day = 86400
+    1week = 604800
+    1month = 2592000
+    1year = 31536000
+    never = 0
+    [formatter_options]
+    plaintext = "Plain Text"
+    syntaxhighlightingtheme = "sons-of-obsidian"
+    syntaxhighlighting = "Source Code"
+    markdown = "Markdown"
+    [traffic]
+    limit = 10
+    [purge]
+    limit = 300
+    batchsize = 10
+    [model]
+    class = Filesystem
+    [model_options]
+    dir = PATH "data"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: privatebin
+  labels:
+    app: privatebin
+  namespace: privatebin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: privatebin
+  template:
+    metadata:
+      labels:
+        app: privatebin
+    spec:
+      securityContext:
+        runAsUser: 65534
+        runAsGroup: 82
+        fsGroup: 82
+      containers:
+      - name: privatebin
+        image: privatebin/nginx-fpm-alpine:1.5.2
+        ports:
+        - containerPort: 8080
+        env:
+        - name: TZ
+          value: America/Sao_Paulo
+        - name: PHP_TZ
+          value: America/Sao_Paulo
+        securityContext:
+          readOnlyRootFilesystem: true
+          privileged: false
+          allowPrivilegeEscalation: false
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+        volumeMounts:
+        - mountPath: /srv/cfg
+          name: privatebin-cfg
+        - mountPath: /srv/data
+          name: privatebin-data
+          readOnly: False
+        - mountPath: /run
+          name: run
+          readOnly: False
+        - mountPath: /tmp
+          name: tmp
+          readOnly: False
+        - mountPath: /var/lib/nginx/tmp
+          name: nginx-cache
+          readOnly: False
+      volumes:
+        - name: privatebin-cfg
+          configMap:
+            name: privatebin-cfg
+        - name: privatebin-data
+          persistentVolumeClaim:
+            claimName: privatebin-pvc
+        - name: run
+          emptyDir:
+            medium: "Memory"
+        - name: tmp
+          emptyDir:
+            medium: "Memory"
+        - name: nginx-cache
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: privatebin
+  name: privatebin-deployment
+  namespace: privatebin
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: privatebin
+  type: ClusterIP
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-bin
+  namespace: cert-manager
+spec:
+  acme:
+    # The ACME server URL
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # Email address used for ACME registration
+    email: carloseabade@gmail.com
+    # Name of a secret used to store the ACME account private key
+    privateKeySecretRef:
+      name: letsencrypt-bin
+    # Enable the HTTP-01 challenge provider
+    solvers:
+    - http01:
+        ingress:
+          ingressTemplate:
+            metadata:
+              annotations:
+                kubernetes.io/ingress.class: traefik
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: letsencrypt-bin
+  namespace: privatebin
+spec:
+  secretName: letsencrypt-bin
+  issuerRef:
+    name: letsencrypt-bin
+    kind: ClusterIssuer
+  dnsNames:
+  - bin.abade.xyz
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-bin-secure
+  namespace: privatebin
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host("bin.abade.xyz")
+    services:
+    - kind: Service
+      name: privatebin-deployment
+      port: 8080
+  tls:
+    secretName: letsencrypt-bin
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-permanent
+  namespace: privatebin
+spec:
+  redirectScheme:
+    permanent: true
+    scheme: https
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-bin
+  namespace: privatebin
+spec:
+  entryPoints:
+  - web
+  routes:
+  - kind: Rule
+    match: Host("bin.abade.xyz")
+    services:
+    - kind: Service
+      name: privatebin-deployment
+      port: 8080
+    middlewares:
+    - name: redirect-permanent
