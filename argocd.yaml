@@ -18232,3 +18232,85 @@ spec:
       app.kubernetes.io/name: argocd-server
   policyTypes:
   - Ingress
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-argocd
+  namespace: cert-manager
+spec:
+  acme:
+    # The ACME server URL
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # Email address used for ACME registration
+    email: carloseabade@gmail.com
+    # Name of a secret used to store the ACME account private key
+    privateKeySecretRef:
+      name: argocd-server-tls
+    # Enable the HTTP-01 challenge provider
+    solvers:
+    - http01:
+        ingress:
+          ingressTemplate:
+            metadata:
+              annotations:
+                kubernetes.io/ingress.class: traefik
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: letsencrypt-argocd
+  namespace: argocd
+spec:
+  secretName: argocd-server-tls
+  issuerRef:
+    name: letsencrypt-argocd
+    kind: ClusterIssuer
+  dnsNames:
+  - argocd.abade.xyz
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-permanent
+  namespace : argocd
+spec:
+  redirectScheme:
+    permanent: true
+    scheme: https
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-argocd
+  namespace: argocd
+spec:
+  entryPoints:
+  - web
+  routes:
+  - kind: Rule
+    match: Host("argocd.abade.xyz")
+    services:
+    - kind: Service
+      name: argocd-server
+      port: 80
+    middlewares:
+    - name: redirect-permanent
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-argocd-secure
+  namespace: argocd
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host("argocd.abade.xyz")
+    services:
+    - kind: Service
+      name: argocd-server
+      port: 80
+  tls:
+    secretName: argocd-server-tls
