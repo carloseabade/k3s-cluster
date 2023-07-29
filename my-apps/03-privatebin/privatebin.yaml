@@ -149,6 +149,16 @@ spec:
     app: privatebin
   type: ClusterIP
 ---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-permanent
+  namespace: privatebin
+spec:
+  redirectScheme:
+    permanent: true
+    scheme: https
+---
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -176,7 +186,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: letsencrypt-bin
-  namespace: privatebin
+  namespace: invidious
 spec:
   secretName: letsencrypt-bin
   issuerRef:
@@ -186,28 +196,10 @@ spec:
   - bin.abade.xyz
 ---
 apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
-metadata:
-  name: traefik-bin-secure
-  namespace: privatebin
-spec:
-  entryPoints:
-  - websecure
-  routes:
-  - kind: Rule
-    match: Host("bin.abade.xyz")
-    services:
-    - kind: Service
-      name: privatebin-deployment
-      port: 8080
-  tls:
-    secretName: letsencrypt-bin
----
-apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
   name: redirect-permanent
-  namespace: privatebin
+  namespace : privatebin
 spec:
   redirectScheme:
     permanent: true
@@ -227,6 +219,24 @@ spec:
     services:
     - kind: Service
       name: privatebin-deployment
-      port: 8080
+      port: 3000
     middlewares:
     - name: redirect-permanent
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-bin-secure
+  namespace: privatebin
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host("bin.abade.xyz")
+    services:
+    - kind: Service
+      name: privatebin-deployment
+      port: 3000
+  tls:
+    secretName: letsencrypt-bin
