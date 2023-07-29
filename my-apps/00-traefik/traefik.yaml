@@ -1,0 +1,50 @@
+# This secret is created with a file named users 
+# kubectl create secret generic dashboard-users --from-file=users
+# Create the users file with htpasswd (https://www.web2generators.com/apache-tools/htpasswd-generator)
+apiVersion: v1
+data:
+  users: Y2FybG9zZWFiYWRlOiRhcHIxJGxldjAxNWt0JEdocFhzUkJNT0ZkbXRjOWFGZno0SDAK
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: dashboard-users
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: dashboard-auth
+spec:
+  basicAuth:
+    secret: dashboard-users
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: dashboard-rewrite
+spec:
+  addPrefix:
+    prefix: /dashboard
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard-secure
+spec:
+  entryPoints:
+  - web
+  routes:
+  - kind: Rule
+    match: Host("dashboard.abade.xyz")
+    services:
+    - kind: TraefikService
+      name: api@internal
+    middlewares:
+    - name: dashboard-auth
+    - name: dashboard-rewrite
+  - kind: Rule
+    match: Host("dashboard.abade.xyz") && PathPrefix("/api")
+    services:
+    - kind: TraefikService
+      name: api@internal
+    middlewares:
+    - name: dashboard-auth
