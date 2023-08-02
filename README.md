@@ -1,4 +1,4 @@
-![Alt text](./my-k3s-cluster.svg)
+![oci schema for my k3s cluster](./k3s-oci-schema.svg)
 
 # Configuring your cluster
 
