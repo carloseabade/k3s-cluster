@@ -18249,7 +18249,7 @@ spec:
     email: carloseabade@gmail.com
     # Name of a secret used to store the ACME account private key
     privateKeySecretRef:
-      name: argocd-server-tls
+      name: letsencrypt-argocd
     # Enable the HTTP-01 challenge provider
     solvers:
     - http01:
@@ -18265,7 +18265,7 @@ metadata:
   name: letsencrypt-argocd
   namespace: argocd
 spec:
-  secretName: argocd-server-tls
+  secretName: letsencrypt-argocd
   issuerRef:
     name: letsencrypt-argocd
     kind: ClusterIssuer
@@ -18316,4 +18316,4 @@ spec:
       name: argocd-server
       port: 80
   tls:
-    secretName: argocd-server-tls
+    secretName: letsencrypt-argocd
