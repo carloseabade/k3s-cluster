@@ -16727,7 +16727,8 @@ metadata:
     app.kubernetes.io/part-of: argocd
   name: argocd-cmd-params-cm
 data:
-  server.insecure: true #Disable TLS, because it will be handled by traefik
+  #Disable TLS, because it will be handled by traefik
+  server.insecure: "true"
 ---
 apiVersion: v1
 kind: ConfigMap
