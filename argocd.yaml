@@ -18275,7 +18275,7 @@ apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
 metadata:
   name: redirect-permanent
-  namespace : argocd
+  namespace: argocd
 spec:
   redirectScheme:
     permanent: true
