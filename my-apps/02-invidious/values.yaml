@@ -60,3 +60,4 @@ config:
   https_only: false
   domain:
   hmac_key: "40b3ba1de28c088b06c9a995ab71c52d245651c5"
+  registration_enabled: true
