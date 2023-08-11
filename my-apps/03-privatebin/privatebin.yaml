@@ -219,7 +219,7 @@ spec:
     services:
     - kind: Service
       name: privatebin-deployment
-      port: 3000
+      port: 8080
     middlewares:
     - name: redirect-permanent
 ---
@@ -237,6 +237,6 @@ spec:
     services:
     - kind: Service
       name: privatebin-deployment
-      port: 3000
+      port: 8080
   tls:
     secretName: letsencrypt-bin
