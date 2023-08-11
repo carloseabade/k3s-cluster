@@ -28,7 +28,7 @@ spec:
 
       # Source of the application manifests
       source:
-        repoURL: https://github.com/carloseabade/k3s-cluster
+        repoURL: git@github.com:carloseabade/k3s-cluster.git
         targetRevision: main
         path: ./my-apps/{{path}}
       
