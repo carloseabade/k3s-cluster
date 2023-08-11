@@ -29,7 +29,7 @@ spec:
       # Source of the application manifests
       source:
         repoURL: git@github.com:carloseabade/k3s-cluster.git
-        targetRevision: main
+        targetRevision: HEAD
         path: ./my-apps/{{path}}
       
       # Destination cluster and namespace to deploy the application
