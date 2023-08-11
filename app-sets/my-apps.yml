@@ -21,7 +21,7 @@ spec:
         path: 03-privatebin
   template:      
     metadata:
-      name: {{app-name}}
+      name: '{{app-name}}'
     spec:
       # The project the application belongs to.
       project: default
@@ -35,7 +35,7 @@ spec:
       # Destination cluster and namespace to deploy the application
       destination:
         server: https://kubernetes.default.svc
-        namespace: {{namespace}}
+        namespace: '{{namespace}}'
 
       # Sync policy
       syncPolicy:
