@@ -5,7 +5,7 @@ metadata:
   name: {{ .existingClaim }}
   namespace: {{ .existingClaimNamespace }}
 spec:
-  accessModes: |-
+  accessModes:
     {{- range .accessModes }}
     - {{ . }}
     {{- end }}
