@@ -979,7 +979,10 @@ readReplicas:
     enabled: true
     ## @param readReplicas.persistence.existingClaim Name of an existing PVC to use
     ##
-    existingClaim: ""
+    existingClaim: "invidious-pvc"
+    ## @param readReplicas.persistence.existingClaimNamespace Namespace of an existing PVC to use
+    ##
+    existingClaimNamespace: "invidious"
     ## @param readReplicas.persistence.mountPath The path the volume will be mounted at
     ## Note: useful when using custom PostgreSQL images
     ##
@@ -995,14 +998,14 @@ readReplicas:
     ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
     ##   GKE, AWS & OpenStack)
     ##
-    storageClass: ""
+    storageClass: "local-path"
     ## @param readReplicas.persistence.accessModes PVC Access Mode for PostgreSQL volume
     ##
     accessModes:
       - ReadWriteOnce
     ## @param readReplicas.persistence.size PVC Storage Request for PostgreSQL volume
     ##
-    size: 8Gi
+    size: 4Gi
     ## @param readReplicas.persistence.annotations Annotations for the PVC
     ##
     annotations: {}
