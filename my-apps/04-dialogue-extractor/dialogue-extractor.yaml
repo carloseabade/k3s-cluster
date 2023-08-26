@@ -1,0 +1,151 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dialogue-extractor
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dialogue-extractor
+  labels:
+    app: dialogue-extractor
+  namespace: dialogue-extractor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dialogue-extractor
+  template:
+    metadata:
+      labels:
+        app: dialogue-extractor
+    spec:
+      securityContext:
+        runAsUser: 65534
+        runAsGroup: 82
+        fsGroup: 82
+      containers:
+      - name: dialogue-extractor
+        image: carloseabade/dialogue-extractor:1.0.0
+        ports:
+        - containerPort: 8080
+        securityContext:
+          readOnlyRootFilesystem: true
+          privileged: false
+          allowPrivilegeEscalation: false
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: dialogue-extractor
+  name: dialogue-extractor-deployment
+  namespace: dialogue-extractor
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: dialogue-extractor
+  type: ClusterIP
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-permanent
+  namespace: dialogue-extractor
+spec:
+  redirectScheme:
+    permanent: true
+    scheme: https
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-extractor
+  namespace: cert-manager
+spec:
+  acme:
+    # The ACME server URL
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # Email address used for ACME registration
+    email: carloseabade@gmail.com
+    # Name of a secret used to store the ACME account private key
+    privateKeySecretRef:
+      name: letsencrypt-extractor
+    # Enable the HTTP-01 challenge provider
+    solvers:
+    - http01:
+        ingress:
+          ingressTemplate:
+            metadata:
+              annotations:
+                kubernetes.io/ingress.class: traefik
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: letsencrypt-extractor
+  namespace: dialogue-extractor
+spec:
+  secretName: letsencrypt-extractor
+  issuerRef:
+    name: letsencrypt-extractor
+    kind: ClusterIssuer
+  dnsNames:
+  - sub.abade.xyz
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-permanent
+  namespace : dialogue-extractor
+spec:
+  redirectScheme:
+    permanent: true
+    scheme: https
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-extractor
+  namespace: dialogue-extractor
+spec:
+  entryPoints:
+  - web
+  routes:
+  - kind: Rule
+    match: Host("sub.abade.xyz")
+    services:
+    - kind: Service
+      name: dialogue-extractor-deployment
+      port: 8080
+    middlewares:
+    - name: redirect-permanent
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-extractor-secure
+  namespace: dialogue-extractor
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host("sub.abade.xyz")
+    services:
+    - kind: Service
+      name: dialogue-extractor-deployment
+      port: 8080
+  tls:
+    secretName: letsencrypt-extractor
