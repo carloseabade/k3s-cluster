@@ -19,6 +19,9 @@ spec:
       - namespace: privatebin
         app-name: privatebin
         path: 03-privatebin
+      - namespace: dialogue-extractor
+        app-name: dialogue-extractor
+        path: 04-dialogue-extractor
   template:      
     metadata:
       name: '{{app-name}}'
