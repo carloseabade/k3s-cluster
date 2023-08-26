@@ -20,17 +20,12 @@ spec:
       labels:
         app: dialogue-extractor
     spec:
-      securityContext:
-        runAsUser: 65534
-        runAsGroup: 82
-        fsGroup: 82
       containers:
       - name: dialogue-extractor
         image: carloseabade/dialogue-extractor:1.0.0
         ports:
         - containerPort: 8080
         securityContext:
-          readOnlyRootFilesystem: true
           privileged: false
           allowPrivilegeEscalation: false
         livenessProbe:
