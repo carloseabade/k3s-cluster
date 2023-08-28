@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: dialogue-extractor
-        image: carloseabade/dialogue-extractor:1.0.0
+        image: carloseabade/dialogue-extractor-arm64:1.0.0
         ports:
         - containerPort: 8080
         securityContext:
