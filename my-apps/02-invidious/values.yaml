@@ -2,7 +2,7 @@ name: invidious
 
 image:
   repository: carloseabade/invidious-arm64
-  tag: 1.2.0
+  tag: 1.2.1
   pullPolicy: Always
 
 replicaCount: 1
